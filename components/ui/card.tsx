@@ -103,10 +103,12 @@ export const CardBlog: React.FC<CardBlogProps> = ({
       <div className="w-full">
         <AspectRatio ratio={4 / 3} className="">
           <Image
+          
             width={384}
             height={300}
             src={src}
             alt={alt}
+            loading="lazy"
             className="rounded-t-lg object-cover h-full"
           />
         </AspectRatio>

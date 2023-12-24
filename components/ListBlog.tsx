@@ -19,70 +19,54 @@ import {
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
+  PaginationFirst,
+  PaginationLast,
 } from "@/components/ui/pagination";
 
-interface BlogData {
-  map(arg0: (blog: BlogData) => React.JSX.Element): React.ReactNode;
-  id: number;
-  slug: string;
-  title: string;
-  content: string;
-  published_at: string;
-  deleted_at: string | null;
-  created_at: string;
-  updated_at: string;
-  small_image: Image[];
-  medium_image: Image[];
-}
 import Link from "next/link";
-import { useSearchParams } from 'next/navigation'
-import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
-
-interface Image {
-  id: number;
-  mime: string;
-  file_name: string;
-  url: string;
-}
+import { useSearchParams } from "next/navigation";
+import { generateEndPage } from "@/lib/utils";
+import { parse } from "path";
 
 const ListBlog = () => {
-  // const[pageNumber, setPageNumber] = useState(1)
-  // const[pageSize, setPageSize] = useState(10)
-  // const[sort, setSort] = useState('-published_at')
-
   const searchParams = useSearchParams();
 
-  let pageNumber: number = 1 || searchParams.get('pageNumber')
-  let pageSize: number = 10 || searchParams.get('pageSize')
-  let sort: string = searchParams.get('sort') || '-published_at'
+  let pageNumber: number = parseInt(searchParams.get("pageNumber") || "1");
+  let pageSize: number = parseInt(searchParams.get("pageSize") || "10");
+  let sort: string = searchParams.get("sort") || "-published_at";
+
   try {
     if (pageNumber < 1) {
-      pageNumber = 1
+      pageNumber = 1;
     }
     if (pageSize < 1) {
-      pageSize = 10
+      pageSize = 10;
     }
   } catch (error) {
-    console.log(error)
+    pageNumber = 1;
+    pageSize = 10;
   }
-  console.log(searchParams.get('pageNumber'))
-  console.log(searchParams.get('pageSize'))
-  console.log(searchParams.get('sort'))
-  
-  const api = 'https://suitmedia-backend.suitdev.com/api/ideas?page[number]=1&page[size]=10&append[]=small_image&append[]=medium_image&sort=published_at'
-  const apiUrl = `https://suitmedia-backend.suitdev.com/api/ideas?page[number]]=${pageNumber}&page[size]=${pageSize}&append[]=small_image&append[]=medium_image&sort=${sort}`;
+
+  console.log(pageNumber);
+  console.log(pageSize);
+  console.log(sort);
+
+  const api =
+    "https://suitmedia-backend.suitdev.com/api/ideas?page[number]=1&page[size]=10&append[]=small_image&append[]=medium_image&sort=published_at";
+  const apiUrl = `https://suitmedia-backend.suitdev.com/api/ideas?page[number]=${pageNumber}&page[size]=${pageSize}&append[]=small_image&append[]=medium_image&sort=${sort}`;
+  console.log(api == apiUrl);
+  console.log(api);
+  console.log(apiUrl);
+
   const { data, isLoading } = useQuery({
     queryFn: async () => {
-      const response = await axios.get(
-        api,
-        {
-          headers: {
-            "Content-type": "application/json",
-            Accept: "application/json",
-          },
-        }
-      );
+      const response = await axios.get(apiUrl, {
+        headers: {
+          "Content-type": "application/json",
+          Accept: "application/json",
+        },
+        timeout: 10000,
+      });
 
       return response as unknown as any;
     },
@@ -93,16 +77,37 @@ const ListBlog = () => {
   const totalPages: number = Math.ceil(totalBlogs / pageSize);
 
   const mapData: BlogData = data?.data.data;
+  const link: Links = data?.data.links;
+
+  let endPage = generateEndPage(totalPages, pageNumber);
+  let midPage = Math.ceil(5 / 2);
+
+  const paginationItems = [];
+  for (let page = 1; page <= endPage; page++) {
+    page == midPage
+      ? paginationItems.push(
+          <PaginationItem key={page}>
+            <PaginationEllipsis></PaginationEllipsis>
+          </PaginationItem>
+        )
+      : paginationItems.push(
+          <PaginationItem key={page}>
+            <PaginationLink href={`#/page=${page}`}>{page}</PaginationLink>
+          </PaginationItem>
+        );
+  }
   // console.log(isLoading);
   // const pathname = usePathname()
 
-
-  console.log(mapData)
+  console.log(mapData);
+  console.log(link)
 
   return (
     <div className="mx-36 mt-20">
       <div className="flex flex-row justify-between">
-        <div className="">Showing 1-{pageSize} of {totalBlogs}</div>
+        <div className="">
+          Showing 1-{pageSize} of {totalBlogs}
+        </div>
         <div className="flex space-x-5">
           <div className="flex align-middle">
             <div className="mr-4 my-auto">Sort per page</div>
@@ -111,7 +116,9 @@ const ListBlog = () => {
                 <SelectValue placeholder="10" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="10" >10</SelectItem>
+                <SelectItem value="10">
+                  <Link href="#">10</Link>
+                </SelectItem>
                 <SelectItem value="20">20</SelectItem>
                 <SelectItem value="50">50</SelectItem>
               </SelectContent>
@@ -132,7 +139,20 @@ const ListBlog = () => {
         </div>
       </div>
       <div className="grid grid-cols-4 mt-10 gap-8">
-        {mapData?.map((blog: BlogData) => {
+        {isLoading || !mapData
+          ? mapData?.map((blog: BlogData) => <CardLoading key={blog.id} />)
+          : mapData?.map((blog: BlogData) => (
+              <CardBlog
+                key={blog.id}
+                href={blog.slug}
+                src={blog.small_image[0].url}
+                alt={blog.small_image[0].file_name}
+                date={blog.created_at}
+                title={blog.title}
+              />
+            ))}
+
+        {/* {mapData?.map((blog: BlogData) => {
           return isLoading || !mapData ? (
             <CardLoading key={blog.id} />
           ) : (
@@ -145,12 +165,29 @@ const ListBlog = () => {
               title={blog.title}
             />
           );
-        })}
+        })} */}
         {/* <CardLoading /> */}
       </div>
       <div className="my-20">
-        
-
+        {isLoading ? 
+        <div> </div> : 
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationFirst href={link.first || '#'} />
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationPrevious href={link.prev || '#'} />
+            </PaginationItem>
+            {paginationItems}
+            <PaginationItem>
+              <PaginationNext href={link.next || '#'}/>
+            </PaginationItem>
+            <PaginationItem>
+              <PaginationLast href={link.last || '#'}/>
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination> }
       </div>
     </div>
   );
