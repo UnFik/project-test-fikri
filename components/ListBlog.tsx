@@ -24,9 +24,8 @@ import {
 } from "@/components/ui/pagination";
 
 import { useSearchParams } from "next/navigation";
-import { generateEndPage, getParamsFromUrl } from "@/lib/utils";
+import { generateEndPage, generateNewUrl } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { get } from "http";
 
 const ListBlog = () => {
   const searchParams = useSearchParams();
@@ -36,7 +35,6 @@ const ListBlog = () => {
   let pageSize: number = parseInt(searchParams.get("page[size]") || "10");
   let sort: string = searchParams.get("sort") || "-published_at";
 
-  console.log(pageNumber);
   try {
     if (pageNumber < 1 || !pageNumber || isNaN(pageNumber)) {
       pageNumber = 1;
@@ -53,14 +51,9 @@ const ListBlog = () => {
     pageSize = 10;
   }
 
-  console.log(pageNumber);
-  console.log(pageSize);
-  console.log(sort);
-
   const api =
     "https://suitmedia-backend.suitdev.com/api/ideas?page[number]=1&page[size]=10&append[]=small_image&append[]=medium_image&sort=published_at";
   const apiUrl = `https://suitmedia-backend.suitdev.com/api/ideas?page[number]=${pageNumber}&page[size]=${pageSize}&append[]=small_image&append[]=medium_image&sort=${sort}`;
-  console.log(apiUrl);
   const { data, isLoading } = useQuery({
     queryFn: async () => {
       const response = await axios.get(apiUrl, {
@@ -82,7 +75,6 @@ const ListBlog = () => {
   const mapData: BlogData = data?.data.data;
   const link: Links = data?.data.links;
 
-  let endPage = generateEndPage(totalPages, pageNumber);
   let midPage = Math.ceil(5 / 2);
 
   const paginationItems = [];
@@ -108,18 +100,19 @@ const ListBlog = () => {
     );
   }
 
-  const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  const handlePageSizeChange = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     const selectedSize = event.target.value;
-    const currentPage = searchParams.get("page[number]") || "1"; 
+    const currentPage = searchParams.get("page[number]") || "1";
 
-    router.push(`/?page[number]=${currentPage}&page[size]=${selectedSize}`)
+    router.push(`/?page[number]=${currentPage}&page[size]=${selectedSize}`);
   };
 
   console.log(mapData);
   console.log(link);
 
-  // console.log(getParamsFromUrl(link.first || "#"))
-  
+  // link.first ? console.log(generateNewUrl(link.first, apiUrl)) : console.log("tes")
 
   return (
     <div className="mx-36 mt-20">
@@ -135,7 +128,7 @@ const ListBlog = () => {
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="10" />
               </SelectTrigger>
-              <SelectContent >
+              <SelectContent>
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="20">20</SelectItem>
                 <SelectItem value="50">50</SelectItem>
@@ -158,8 +151,10 @@ const ListBlog = () => {
       </div>
       <div className="grid grid-cols-4 mt-10 gap-8">
         {isLoading || !mapData
-          ? mapData?.map((blog: BlogData) => <CardLoading key={blog.id} />)
-          : mapData?.map((blog: BlogData) => (
+          ? Array.from({ length: 10 }, (_, index) => (
+              <CardLoading key={index} />
+            ))
+          : mapData.map((blog: BlogData) => (
               <CardBlog
                 key={blog.id}
                 href={blog.slug}
@@ -192,17 +187,23 @@ const ListBlog = () => {
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationFirst href={link.first || "#"} />
+                <PaginationFirst
+                  href={generateNewUrl(link.prev || "#", apiUrl)}
+                />
               </PaginationItem>
               <PaginationItem>
                 <PaginationPrevious href={link.prev || "#"} />
               </PaginationItem>
               {paginationItems}
               <PaginationItem>
-                <PaginationNext href={link.next || "#"} />
+                <PaginationNext
+                  href={generateNewUrl(link.next || "#", apiUrl)}
+                />
               </PaginationItem>
               <PaginationItem>
-                <PaginationLast href={link.last || "#"} />
+                <PaginationLast
+                  href={generateNewUrl(link.last || "#", apiUrl)}
+                />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
