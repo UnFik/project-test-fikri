@@ -118,7 +118,7 @@ const ListBlog = () => {
   console.log(mapData);
   console.log(link);
 
-  console.log(getParamsFromUrl(link.first || "#"))
+  // console.log(getParamsFromUrl(link.first || "#"))
   
 
   return (
