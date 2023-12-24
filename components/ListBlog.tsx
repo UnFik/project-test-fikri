@@ -123,12 +123,13 @@ const ListBlog = () => {
 
     if (pageNumber - 1 < 1) {
       url.searchParams.set("page[number]", "1");
+      
+    } else {
+      url.searchParams.set("page[number]", (pageNumber - 1).toString());
       router.push(url.toString());
       setTimeout(() => {
         window.location.reload();
       }, 1000);
-    } else {
-      url.searchParams.set("page[number]", (pageNumber - 1).toString());
     }
   };
 
@@ -141,12 +142,12 @@ const ListBlog = () => {
     }
     if (pageNumber + 1 > totalPages) {
       url.searchParams.set("page[number]", totalPages.toString());
+    } else {
+      url.searchParams.set("page[number]", (pageNumber + 1).toString());
       router.push(url.toString());
       setTimeout(() => {
         window.location.reload();
       }, 1000);
-    } else {
-      url.searchParams.set("page[number]", (pageNumber + 1).toString());
     }
   };
 
