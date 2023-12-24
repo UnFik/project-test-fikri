@@ -23,13 +23,132 @@ import {
   PaginationLast,
 } from "@/components/ui/pagination";
 
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { generateEndPage, generateNewUrl } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 const ListBlog = () => {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const checkImage = () => {
+    const isImageAppend = searchParams.get("append[]") == "small_image" ? true : false;
+    return isImageAppend;
+  };
+
+  const handleChangePage = (value: string) => {
+    pageSize = parseInt(value);
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set("page[size]", value);
+    console.log(checkImage());
+    if (checkImage() == false) {
+      urlParams.append("append[]", "small_image");
+      urlParams.append("append[]", "medium_image");
+    }
+    router.push(`ideas/?${urlParams}`);
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
+
+  const handleChangeDate = (value: string) => {
+    pageSize = parseInt(value);
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set("sort", value);
+    if (!checkImage) {
+      urlParams.append("append[]", "small_image");
+      urlParams.append("append[]", "medium_image");
+    }
+    router.push(`ideas/?${urlParams}`);
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
+
+  const handlePaginationNumber = (page: number) => {
+    const currentUrl = window.location.href;
+    const url = new URL(currentUrl);
+    url.searchParams.set("page[number]", page.toString());
+    if (!checkImage) {
+      url.searchParams.append("append[]", "small_image");
+      url.searchParams.append("append[]", "medium_image");
+    }
+
+    router.push(url.toString());
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
+
+  const handlePaginationFirst = () => {
+    const currentUrl = window.location.href;
+    const url = new URL(currentUrl);
+    url.searchParams.set("page[number]", "1");
+    if (!checkImage) {
+      url.searchParams.append("append[]", "small_image");
+      url.searchParams.append("append[]", "medium_image");
+    }
+
+    router.push(url.toString());
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
+
+  const handlePaginationLast = () => {
+    const currentUrl = window.location.href;
+    const url = new URL(currentUrl);
+    url.searchParams.set("page[number]", totalPages.toString());
+    if (!checkImage) {
+      url.searchParams.append("append[]", "small_image");
+      url.searchParams.append("append[]", "medium_image");
+    }
+
+    router.push(url.toString());
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
+
+  const handlePaginationPrev = () => {
+    const currentUrl = window.location.href;
+    const url = new URL(currentUrl);
+    if (!checkImage) {
+      url.searchParams.append("append[]", "small_image");
+      url.searchParams.append("append[]", "medium_image");
+    }
+
+    if (pageNumber - 1 < 1) {
+      url.searchParams.set("page[number]", "1");
+      router.push(url.toString());
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } else {
+      url.searchParams.set("page[number]", (pageNumber - 1).toString());
+    }
+  };
+
+  const handlePaginationNext = () => {
+    const currentUrl = window.location.href;
+    const url = new URL(currentUrl);
+    if (!checkImage) {
+      url.searchParams.append("append[]", "small_image");
+      url.searchParams.append("append[]", "medium_image");
+    }
+    if (pageNumber + 1 > totalPages) {
+      url.searchParams.set("page[number]", totalPages.toString());
+      router.push(url.toString());
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } else {
+      url.searchParams.set("page[number]", (pageNumber + 1).toString());
+    }
+  };
 
   let pageNumber: number = parseInt(searchParams.get("page[number]") || "1");
   let pageSize: number = parseInt(searchParams.get("page[size]") || "10");
@@ -51,8 +170,6 @@ const ListBlog = () => {
     pageSize = 10;
   }
 
-  const api =
-    "https://suitmedia-backend.suitdev.com/api/ideas?page[number]=1&page[size]=10&append[]=small_image&append[]=medium_image&sort=published_at";
   const apiUrl = `https://suitmedia-backend.suitdev.com/api/ideas?page[number]=${pageNumber}&page[size]=${pageSize}&append[]=small_image&append[]=medium_image&sort=${sort}`;
   const { data, isLoading } = useQuery({
     queryFn: async () => {
@@ -87,7 +204,12 @@ const ListBlog = () => {
         )
       : paginationItems.push(
           <PaginationItem key={page}>
-            <PaginationLink href={`#/page=${page}`}>{page}</PaginationLink>
+            <PaginationLink
+              href={"#"}
+              onClick={() => handlePaginationNumber(page)}
+            >
+              {page}
+            </PaginationLink>
           </PaginationItem>
         );
   }
@@ -95,22 +217,16 @@ const ListBlog = () => {
   for (let page = totalPages - 1; page <= totalPages; page++) {
     paginationItems.push(
       <PaginationItem key={page}>
-        <PaginationLink href={`#/page=${page}`}>{page}</PaginationLink>
+        <PaginationLink href={`#`} onClick={() => handlePaginationNumber(page)}>
+          {page}
+        </PaginationLink>
       </PaginationItem>
     );
   }
 
-  const handlePageSizeChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const selectedSize = event.target.value;
-    const currentPage = searchParams.get("page[number]") || "1";
-
-    router.push(`/?page[number]=${currentPage}&page[size]=${selectedSize}`);
-  };
-
   console.log(mapData);
   console.log(link);
+  console.log(checkImage());
 
   // link.first ? console.log(generateNewUrl(link.first, apiUrl)) : console.log("tes")
 
@@ -124,9 +240,9 @@ const ListBlog = () => {
         <div className="flex space-x-5">
           <div className="flex align-middle">
             <div className="mr-4 my-auto">Sort per page</div>
-            <Select>
+            <Select onValueChange={handleChangePage}>
               <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="10" />
+                <SelectValue placeholder={pageSize} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="10">10</SelectItem>
@@ -137,13 +253,15 @@ const ListBlog = () => {
           </div>
           <div className="flex align-middle">
             <div className="mr-4 my-auto">Sort by</div>
-            <Select>
+            <Select onValueChange={handleChangeDate}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Newest" />
+                <SelectValue
+                  placeholder={sort == "published_at" ? "Oldest" : "Newest"}
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="light">Newest</SelectItem>
-                <SelectItem value="dark">Oldest</SelectItem>
+                <SelectItem value="-published_at">Newest</SelectItem>
+                <SelectItem value="published_at">Oldest</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -158,27 +276,12 @@ const ListBlog = () => {
               <CardBlog
                 key={blog.id}
                 href={blog.slug}
-                src={blog.small_image[0].url}
-                alt={blog.small_image[0].file_name}
+                src={blog.small_image[0]?.url || blog.medium_image[0]?.url}
+                alt={blog.small_image[0]?.file_name || blog.medium_image[0]?.file_name}
                 date={blog.created_at.split(" ")[0]}
                 title={blog.title}
               />
             ))}
-        {/* {mapData?.map((blog: BlogData) => {
-          return isLoading || !mapData ? (
-            <CardLoading key={blog.id} />
-          ) : (
-            <CardBlog
-              key={blog.id}
-              href={blog.slug}
-              src={blog.small_image[0].url}
-              alt={blog.small_image[0].file_name}
-              date={blog.published_at}
-              title={blog.title}
-            />
-          );
-        })} */}
-        {/* <CardLoading /> */}
       </div>
       <div className="my-20">
         {isLoading ? (
@@ -188,21 +291,29 @@ const ListBlog = () => {
             <PaginationContent>
               <PaginationItem>
                 <PaginationFirst
-                  href={generateNewUrl(link.prev || "#", apiUrl)}
+                  href={"#"}
+                  onClick={() => handlePaginationFirst()}
                 />
               </PaginationItem>
               <PaginationItem>
-                <PaginationPrevious href={link.prev || "#"} />
+                <PaginationPrevious
+                  href={"#"}
+                  onClick={() => {
+                    handlePaginationPrev;
+                  }}
+                />
               </PaginationItem>
               {paginationItems}
               <PaginationItem>
                 <PaginationNext
-                  href={generateNewUrl(link.next || "#", apiUrl)}
+                  href={"#"}
+                  onClick={() => handlePaginationNext()}
                 />
               </PaginationItem>
               <PaginationItem>
                 <PaginationLast
-                  href={generateNewUrl(link.last || "#", apiUrl)}
+                  href={"#"}
+                  onClick={() => handlePaginationLast()}
                 />
               </PaginationItem>
             </PaginationContent>

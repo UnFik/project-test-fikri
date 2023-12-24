@@ -1,5 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { useSearchParams } from "next/navigation";
+
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -38,13 +40,26 @@ export function getParamsFromUrl(url: string) {
   return params;
 }
 
-export function generateNewUrl(params: { [key: string]: string }) {
-  const url = new URL(window.location.href);
-  const searchParams = url.searchParams;
+export function generateNewUrl(link: string, urlApi: string): string {
+  const paramsString: string = link.split('?').pop() || ''; // Mengambil bagian setelah tanda '?'
+  const keyValuePairs: string[] = paramsString.split('&'); // Memisahkan setiap pasangan kunci-nilai
 
-  Object.keys(params).forEach((key) => {
-    searchParams.set(key, params[key]);
+  const params: { [key: string]: string } = {};
+  keyValuePairs.forEach(pair => {
+      const [key, value] = pair.split('='); // Mendapatkan kunci dan nilainya
+      params[key] = decodeURIComponent(value); // Menambahkan ke objek params
   });
 
-  return url.toString();
-} 
+  // Modifikasi URL API dengan nilai-nilai dari link
+  const urlSearchParams = new URLSearchParams(urlApi.split('?').pop() || '');
+  for (const key in params) {
+      if (params.hasOwnProperty(key)) {
+          urlSearchParams.set(key, params[key]);
+      }
+  }
+
+  const apiUrl: string = urlApi.split('?')[0]; // Ambil bagian sebelum tanda '?'
+  const newUrl: string = `${apiUrl}?${urlSearchParams.toString()}`; // Gabungkan kembali URL dengan parameter baru
+
+  return newUrl;
+}
