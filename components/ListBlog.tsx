@@ -23,24 +23,30 @@ import {
   PaginationLast,
 } from "@/components/ui/pagination";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { generateEndPage } from "@/lib/utils";
-import { parse } from "path";
+import { generateEndPage, getParamsFromUrl } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { get } from "http";
 
 const ListBlog = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
-  let pageNumber: number = parseInt(searchParams.get("pageNumber") || "1");
-  let pageSize: number = parseInt(searchParams.get("pageSize") || "10");
+  let pageNumber: number = parseInt(searchParams.get("page[number]") || "1");
+  let pageSize: number = parseInt(searchParams.get("page[size]") || "10");
   let sort: string = searchParams.get("sort") || "-published_at";
 
+  console.log(pageNumber);
   try {
-    if (pageNumber < 1) {
+    if (pageNumber < 1 || !pageNumber || isNaN(pageNumber)) {
       pageNumber = 1;
     }
-    if (pageSize < 1) {
+    if (pageSize < 10 || !pageSize || isNaN(pageSize)) {
       pageSize = 10;
+    }
+
+    if (sort !== "published_at" && sort !== "-published_at") {
+      sort = "published_at";
     }
   } catch (error) {
     pageNumber = 1;
@@ -54,10 +60,7 @@ const ListBlog = () => {
   const api =
     "https://suitmedia-backend.suitdev.com/api/ideas?page[number]=1&page[size]=10&append[]=small_image&append[]=medium_image&sort=published_at";
   const apiUrl = `https://suitmedia-backend.suitdev.com/api/ideas?page[number]=${pageNumber}&page[size]=${pageSize}&append[]=small_image&append[]=medium_image&sort=${sort}`;
-  console.log(api == apiUrl);
-  console.log(api);
   console.log(apiUrl);
-
   const { data, isLoading } = useQuery({
     queryFn: async () => {
       const response = await axios.get(apiUrl, {
@@ -83,7 +86,7 @@ const ListBlog = () => {
   let midPage = Math.ceil(5 / 2);
 
   const paginationItems = [];
-  for (let page = 1; page <= endPage; page++) {
+  for (let page = 1; page <= midPage; page++) {
     page == midPage
       ? paginationItems.push(
           <PaginationItem key={page}>
@@ -96,17 +99,34 @@ const ListBlog = () => {
           </PaginationItem>
         );
   }
-  // console.log(isLoading);
-  // const pathname = usePathname()
+
+  for (let page = totalPages - 1; page <= totalPages; page++) {
+    paginationItems.push(
+      <PaginationItem key={page}>
+        <PaginationLink href={`#/page=${page}`}>{page}</PaginationLink>
+      </PaginationItem>
+    );
+  }
+
+  const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedSize = event.target.value;
+    const currentPage = searchParams.get("page[number]") || "1"; 
+
+    router.push(`/?page[number]=${currentPage}&page[size]=${selectedSize}`)
+  };
 
   console.log(mapData);
-  console.log(link)
+  console.log(link);
+
+  console.log(getParamsFromUrl(link.first || "#"))
+  
 
   return (
     <div className="mx-36 mt-20">
       <div className="flex flex-row justify-between">
         <div className="">
-          Showing 1-{pageSize} of {totalBlogs}
+          Showing {(pageNumber - 1) * pageSize + 1}-
+          {Math.min(pageNumber * pageSize, totalBlogs)} of {totalBlogs}
         </div>
         <div className="flex space-x-5">
           <div className="flex align-middle">
@@ -115,10 +135,8 @@ const ListBlog = () => {
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="10" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">
-                  <Link href="#">10</Link>
-                </SelectItem>
+              <SelectContent >
+                <SelectItem value="10">10</SelectItem>
                 <SelectItem value="20">20</SelectItem>
                 <SelectItem value="50">50</SelectItem>
               </SelectContent>
@@ -147,11 +165,10 @@ const ListBlog = () => {
                 href={blog.slug}
                 src={blog.small_image[0].url}
                 alt={blog.small_image[0].file_name}
-                date={blog.created_at.split(' ')[0]}
+                date={blog.created_at.split(" ")[0]}
                 title={blog.title}
               />
             ))}
-
         {/* {mapData?.map((blog: BlogData) => {
           return isLoading || !mapData ? (
             <CardLoading key={blog.id} />
@@ -169,25 +186,27 @@ const ListBlog = () => {
         {/* <CardLoading /> */}
       </div>
       <div className="my-20">
-        {isLoading ? 
-        <div> </div> : 
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationFirst href={link.first || '#'} />
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationPrevious href={link.prev || '#'} />
-            </PaginationItem>
-            {paginationItems}
-            <PaginationItem>
-              <PaginationNext href={link.next || '#'}/>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLast href={link.last || '#'}/>
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination> }
+        {isLoading ? (
+          <div> </div>
+        ) : (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationFirst href={link.first || "#"} />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationPrevious href={link.prev || "#"} />
+              </PaginationItem>
+              {paginationItems}
+              <PaginationItem>
+                <PaginationNext href={link.next || "#"} />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLast href={link.last || "#"} />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
       </div>
     </div>
   );

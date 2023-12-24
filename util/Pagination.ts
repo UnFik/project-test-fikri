@@ -4,9 +4,7 @@ export function generatePagination(totalPages: number, currentPage: number, visi
     const paginationItems: JSX.Element[] = [];
     let startPage = 1;
     let endPage = totalPages;
-  
-    // ... logika pagination dari contoh sebelumnya ...
-  
+    
     return paginationItems;
   }
   
