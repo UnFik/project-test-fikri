@@ -147,7 +147,7 @@ const ListBlog = () => {
                 href={blog.slug}
                 src={blog.small_image[0].url}
                 alt={blog.small_image[0].file_name}
-                date={blog.created_at}
+                date={blog.created_at.split(' ')[0]}
                 title={blog.title}
               />
             ))}
