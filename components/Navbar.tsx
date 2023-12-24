@@ -53,9 +53,9 @@ const Navbar = () => {
 
   return (
     <div className={navbarClass}>
-      <div className="nav-brand mx-5">
+      <a href='/' className="nav-brand mx-5">
         <Image src={showBackground ? "/logo-white.png" : "/logo.png"} width={100} height={100} alt="Suitmedia Logo" />
-      </div>
+      </a>
       <div className=" flex flex-row mt-auto">
         {navLinks.map((link) => {
           const isActive = pathname.startsWith(link.href)
